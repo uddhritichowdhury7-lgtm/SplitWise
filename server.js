@@ -106,8 +106,14 @@ app.get('/api/groups/:id', authenticateToken, async (req, res) => {
   const payments = await prisma.payment.findMany({ where: { groupId: group.id }, include: { sender: { select: safeUser }, allocations: { include: { recipient: { select: safeUser } } } }, orderBy: { createdAt: 'desc' } });
   const balances = Object.fromEntries(group.members.map(m => [m.userId, 0]));
   for (const expense of expenses) { balances[expense.payerId] += expense.amountPaise; for (const split of expense.splits) balances[split.userId] -= split.sharePaise; }
-  for (const payment of payments) for (const allocation of payment.allocations) { balances[payment.senderId] += allocation.amountPaise; balances[allocation.recipientId] -= allocation.amountPaise; }
-  res.json({ success: true, group, expenses, payments, balances: group.members.map(m => ({ user: m.user, balancePaise: balances[m.userId] })) });
+for (const payment of payments) {
+  if (payment.status !== 'recorded' && payment.status !== 'paid') continue;
+
+  for (const allocation of payment.allocations) {
+    balances[payment.senderId] += allocation.amountPaise;
+    balances[allocation.recipientId] -= allocation.amountPaise;
+  }
+}  res.json({ success: true, group, expenses, payments, balances: group.members.map(m => ({ user: m.user, balancePaise: balances[m.userId] })) });
 });
 app.post('/api/expenses', authenticateToken, async (req, res) => {
   const groupId = Number(req.body?.groupId), description = String(req.body?.description || '').trim(), amountPaise = toPaise(req.body?.amountPaise ?? req.body?.amount, req.body?.amountPaise !== undefined);
