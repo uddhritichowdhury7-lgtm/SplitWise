@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  name        String
+  email       String       @unique
+  password    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships GroupMember[]
+  createdGroups Group[]    @relation("GroupCreator")
+  expensesPaid Expense[]   @relation("ExpensePayer")
+  splits      ExpenseSplit[]
+  paymentsSent Payment[]   @relation("PaymentSender")
+  allocations PaymentAllocation[]
+  chatMessages ChatMessage[]
+  razorpayAccountId String?
+  personalTransactions PersonalTransaction[]
+  personalBudgets      PersonalBudget[]
+}
+
+model Group {
+  id        Int           @id @default(autoincrement())
+  name      String
+  createdAt DateTime      @default(now())
+  creatorId Int
+  creator   User          @relation("GroupCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  members   GroupMember[]
+  expenses  Expense[]
+  payments  Payment[]
+  messages  ChatMessage[]
+}
+
+model GroupMember {
+  id      Int   @id @default(autoincrement())
+  groupId Int
+  userId  Int
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([groupId, userId])
+}
+
+model Expense {
+  id          Int           @id @default(autoincrement())
+  groupId     Int
+  payerId     Int
+  description String
+  amountPaise Int
+  createdAt   DateTime      @default(now())
+  group       Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  payer       User          @relation("ExpensePayer", fields: [payerId], references: [id], onDelete: Cascade)
+  splits      ExpenseSplit[]
+}
+
+model ExpenseSplit {
+  id             Int     @id @default(autoincrement())
+  expenseId      Int
+  userId         Int
+  sharePaise     Int
+  settledPaise   Int     @default(0)
+  expense        Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([expenseId, userId])
+}
+
+model Payment {
+  id          Int                 @id @default(autoincrement())
+  groupId     Int
+  senderId    Int
+  totalPaise  Int
+  method      String              @default("recorded")
+  reference   String?
+  status      String              @default("recorded")
+  providerOrderId String?          @unique
+  createdAt   DateTime            @default(now())
+  group       Group               @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender      User                @relation("PaymentSender", fields: [senderId], references: [id], onDelete: Cascade)
+  allocations PaymentAllocation[]
+}
+
+model PaymentAllocation {
+  id          Int     @id @default(autoincrement())
+  paymentId   Int
+  recipientId Int
+  amountPaise Int
+  payment     Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  recipient   User    @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+}
+
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  groupId   Int
+  senderId  Int
+  ciphertext String
+  iv        String
+  authTag   String
+  createdAt DateTime @default(now())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+
+model PersonalTransaction {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  type        String
+  category    String
+  amountPaise Int
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, date])
+}
+
+model PersonalBudget {
+  id         Int    @id @default(autoincrement())
+  userId     Int
+  month      String
+  category   String
+  limitPaise Int
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, month, category])
+}

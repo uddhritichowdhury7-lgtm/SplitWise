@@ -1,0 +1,19 @@
+SPLITWISE DEMO QUICK GUIDE
+
+1. Run RUN_ME_FIRST.bat and open http://localhost:5000.
+2. Log in with aarav@example.com / password123.
+3. GROUP FINANCE:
+   - Open College Flatmates.
+   - Show the three demo members and Welcome dinner expense.
+   - Add a new expense (e.g. Groceries, Rs. 900).
+   - Show how the balance changes.
+   - Open group chat and send a test message.
+   - Show payment allocation recording (this records allocations; it does not itself move money).
+4. PERSONAL FINANCE:
+   - Click Personal Finance in the top navigation.
+   - Add income (e.g. Salary, Rs. 40000).
+   - Set monthly limits for Rent, Utilities, Groceries, Shopping and Savings.
+   - Add expenses and show the remaining category budget and available-to-spend amount.
+5. Explain that savings is a virtual reserved amount, not a bank lock.
+
+To stop: Ctrl+C in the server terminal.
